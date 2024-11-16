@@ -3,22 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Mailgun\Mailgun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Classes\FormatResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenBlacklistedException;
 
-
 class AuthController extends FormatResponse
 {
-
     public function validateToken()
     {
         try {
@@ -81,7 +76,6 @@ class AuthController extends FormatResponse
 
         return $this->toJson($this->estadoExitoso($user));
     }
-
 
     /**
      * Get a JWT via given credentials.
