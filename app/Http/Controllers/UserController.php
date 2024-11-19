@@ -3,15 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserRol;
 use Illuminate\Http\Request;
 use App\Classes\FormatResponse;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends FormatResponse
 {
     public function getUsers(){
-        $users = User::all();
+        $users = User::join('user_roles', 'users.id', '=', 'user_roles.user_id')
+            ->join('roles', 'user_roles.role_id', '=', 'roles.id')
+            ->select('users.*', 'roles.name as rol')
+            ->get();
         return $this->toJson($this->estadoExitoso($users));
     }
 
@@ -42,25 +48,44 @@ class UserController extends FormatResponse
     }
 
 
-    public function register() {
-        $validator = Validator::make(request()->all(), [
+    public function register(Request $request) {
+        $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6',
+            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if($validator->fails()){
             return $this->toJson($this->estadoOperacionFallida($validator->errors()));
         }
 
-        $user = new User;
-        $user->name = request()->name;
-        $user->nickname = request()->name;
-        $user->email = request()->email;
-        $user->nickname = $this->generarNicknameAleatorio();
-        $user->images = 'https://ui-avatars.com/api/?name='.request()->name;
-        $user->password = bcrypt(request()->password);
-        $user->save();
+        DB::beginTransaction();
+        try {
+            if($request->file('image')){
+                $path = $request->file('image');
+                $path = Storage::disk('public')->put('images', $path);
+                $url = Storage::url($path);
+            }
+            $user = new User;
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->nickname = $this->generarNicknameAleatorio();
+            $user->image = $url ?? 'https://ui-avatars.com/api/?name='. $request->name;
+            $user->status = 1;
+            $user->password = bcrypt($request->password);
+            $user->save();
+
+            $user_rol = new UserRol;
+            $user_rol->user_id = $user->id;
+            $user_rol->role_id = $request->role_id;
+            $user_rol->save();
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->toJson($this->estadoOperacionFallida($th->getMessage()));
+        }
 
         return $this->toJson($this->estadoExitoso($user));
     }
@@ -81,6 +106,7 @@ class UserController extends FormatResponse
         $user->name = request()->name;
         $user->email = request()->email;
         $user->password = bcrypt(request()->password);
+        $user->status = request()->status;
         $user->save();
 
         return $this->toJson($this->estadoExitoso($user));

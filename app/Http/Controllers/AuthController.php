@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserRol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Classes\FormatResponse;
@@ -70,9 +71,14 @@ class AuthController extends FormatResponse
         $user->name = request()->name;
         $user->email = request()->email;
         $user->nickname = $this->generarNicknameAleatorio();
-        $user->image = 'https://ui-avatars.com/api/?name='.request()->name;
+        $user->image = 'https://ui-avatars.com/api/?name='. request()->name;
         $user->password = bcrypt(request()->password);
         $user->save();
+
+        $user_rol = new UserRol;
+        $user_rol->user_id = $user->id;
+        $user_rol->role_id = 2;
+        $user_rol->save();
 
         return $this->toJson($this->estadoExitoso($user));
     }
@@ -137,7 +143,13 @@ class AuthController extends FormatResponse
      */
     public function me()
     {
-        return response()->json(auth()->user());
+        $user = auth()->user();
+        $user = User::join('user_roles', 'users.id', 'user_roles.user_id')
+            ->join('roles', 'user_roles.role_id', 'roles.id')
+            ->where('users.id', $user->id)
+            ->select('users.*', 'roles.name as role', 'roles.id as role_id')
+            ->first();
+        return $this->toJson($this->estadoExitoso($user));
     }
 
     /**

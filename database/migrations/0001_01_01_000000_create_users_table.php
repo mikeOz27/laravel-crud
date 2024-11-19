@@ -17,16 +17,15 @@ return new class extends Migration
             $table->string('nickname');
             $table->text('image');
             $table->string('email')->unique();
+            $table->string('phone')->nullable();
+            $table->text('address')->nullable();
+            $table->date('birthday')->nullable();
+            $table->string('type_identification')->nullable();
+            $table->string('identification')->nullable();
+            $table->integer('status')->default(1);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
-            $table->timestamps();
-        });
-
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->string('email')->primary();
-            $table->string('token');
             $table->timestamps();
         });
 
@@ -46,7 +45,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }
 };
