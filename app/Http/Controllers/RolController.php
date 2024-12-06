@@ -17,51 +17,35 @@ class RolController extends FormatResponse
         return $this->toJson($this->estadoExitoso($roles));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function get_roles()
     {
-        //
+        $roles = Role::all();
+        return response()->json($roles);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function create_role()
     {
-        //
+        $role = Role::create(request()->all());
+        return response()->json($role);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update_role($id)
     {
-        //
+        $role = Role::find($id);
+        $role->update(request()->all());
+        return response()->json($role);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function delete_role($id)
     {
-        //
+        $role = Role::find($id);
+        $role->delete();
+        return response()->json('deleted');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function countRoles()
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $roles = Role::count();
+        return $this->estadoExitoso($roles);
     }
 }

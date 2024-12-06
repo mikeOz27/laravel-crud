@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Classes\FormatResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
@@ -39,8 +40,8 @@ class AuthController extends FormatResponse
         }
     }
 
-    function generarNicknameAleatorio() {
-        $prefijos = ['User'];
+    function generarNicknameAleatorio($name) {
+        $prefijos = [$name . '_'];
         $sufijo = rand(1000, 9999); // Número aleatorio de 4 dígitos
         $letras = substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), 0, 3);
 
@@ -66,19 +67,32 @@ class AuthController extends FormatResponse
         if($validator->fails()){
             return $this->toJson($this->estadoOperacionFallida($validator->errors()));
         }
+        $name = request()->name;
+        if(request()->file('image')){
+            $path = request()->file('image');
+            $path = Storage::disk('public')->put('images', $path);
+            $storage = Storage::url($path);
+            $url = env('APP_URL_IMAGE') . $storage;
+        }
 
         $user = new User;
-        $user->name = request()->name;
+        $user->name = $name;
         $user->email = request()->email;
-        $user->nickname = $this->generarNicknameAleatorio();
-        $user->image = 'https://ui-avatars.com/api/?name='. request()->name;
+        $user->nickname = $this->generarNicknameAleatorio($name);
+        $user->image = $url ?? 'https://ui-avatars.com/api/?name='. $name;
         $user->password = bcrypt(request()->password);
-        $user->save();
+        if($user->save()){
+            $user_rol = new UserRol;
+            $user_rol->user_id = $user->id;
+            $user_rol->role_id = request()->role_id;
+            $user_rol->save();
 
-        $user_rol = new UserRol;
-        $user_rol->user_id = $user->id;
-        $user_rol->role_id = 2;
-        $user_rol->save();
+            $user = User::join('user_roles', 'users.id', 'user_roles.user_id')
+                ->join('roles', 'user_roles.role_id', 'roles.id')
+                ->where('users.id', $user->id)
+                ->select('users.*', 'roles.name as role', 'roles.id as role_id')
+                ->first();
+        }
 
         return $this->toJson($this->estadoExitoso($user));
     }
@@ -106,12 +120,12 @@ class AuthController extends FormatResponse
         } else {
             try {
                 $credentials = request(['email', 'password']);
-                // dd($request->email);
                 if (! $token = auth()->attempt($credentials)) {
                     return $this->toJson($this->estadoOperacionFallida('Las credenciales no son correctas'));
                 }
 
                 $user = User::where('email', $request->email)->first();
+                $user->role = UserRol::join('roles', 'roles.id', 'user_roles.role_id')->where('user_id', $user->id)->first();
                 $date_expires = now()->addMinutes(config('jwt.ttl')); // TIEMPO DE TOKEN 1 HORA
                 $timeExpire = $date_expires;
                 $mensaje = "Procesado con éxito";
@@ -124,7 +138,6 @@ class AuthController extends FormatResponse
                     'token_type'   => 'bearer',
                     'user'         => $user
                 ];
-
 
                 return $response = [
                     'status' => $response
@@ -193,7 +206,7 @@ class AuthController extends FormatResponse
             // Otros errores generales de JWT
             return response()->json([
                 'status' => 'error',
-                'message' => 'Token inválido o expirado.'
+                'message' => 'Token inválido o expiró'
             ], 401);
         }
 

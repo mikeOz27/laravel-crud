@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<ruleset name="MiProyecto">
+  <description>Reglas personalizadas para Prueba FullStack</description>
+  <file>src</file>
+   <rule ref="PSR12" />
+  <exclude name="Generic.Files.LineLength" />
+</ruleset>
