@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserRol;
-use Illuminate\Http\Request;
 use App\Classes\FormatResponse;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -55,13 +54,27 @@ class UserController extends FormatResponse
         return $prefijo . $letras . $sufijo;
     }
 
+    public function randomPassword() {
+        $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+        $pass = [];
+        $alphaLength = strlen($alphabet) - 1;
+        for ($i = 0; $i < 8; $i++) {
+            $n = rand(0, $alphaLength);
+            $pass[] = $alphabet[$n];
+        }
 
-    public function register_user() {
+        // agregar email y password al archivo txt
+        $file = fopen("users-credentials.txt", "a");
+        fwrite($file, request()->email . ": " . implode($pass) . "\n");
+        fclose($file);
+
+        return implode($pass);
+    }
+
+    public function registerUser() {
         $validator = Validator::make(request()->all(), [
             'name' => 'required',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if($validator->fails()){
@@ -83,7 +96,7 @@ class UserController extends FormatResponse
             $user->nickname = $this->generarNicknameAleatorio($name);
             $user->image = $url ?? 'https://ui-avatars.com/api/?name='. request()->name;
             $user->status = 1;
-            $user->password = bcrypt(request()->password);
+            $user->password = bcrypt($this->randomPassword());
             if($user->save()){
                 $user_rol = new UserRol;
                 $user_rol->user_id = $user->id;
@@ -107,7 +120,7 @@ class UserController extends FormatResponse
         return $this->toJson($this->estadoExitoso($user));
     }
 
-    public function update() {
+    public function updateUser() {
         $validator = Validator::make(request()->all(), [
             'name' => 'required',
             'email' => ['required', 'email',  Rule::unique('users')->ignore(request()->id)],
@@ -124,7 +137,7 @@ class UserController extends FormatResponse
         return $this->toJson($this->estadoExitoso($user));
     }
 
-    public function delete($id){
+    public function deleteUser($id){
         $user = User::find($id);
         $user->delete();
         return $this->toJson($this->estadoExitoso($user));

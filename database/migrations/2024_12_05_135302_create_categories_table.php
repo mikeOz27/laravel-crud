@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('slug', 150);
             $table->text('description');
             $table->boolean('status')->default(1);
+            $table->boolean('used')->default(0);
             $table->timestamps();
         });
     }

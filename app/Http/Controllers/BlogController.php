@@ -11,7 +11,13 @@ class BlogController extends FormatResponse
     public function getBlogs()
     {
         $blogs = Blog::all();
-        return response()->json($blogs);
+        return $this->estadoExitoso($blogs);
+    }
+
+    public function getBlogId($id)
+    {
+        $blog = Blog::find($id);
+        return $this->estadoExitoso($blog);
     }
 
     public function createBlog()

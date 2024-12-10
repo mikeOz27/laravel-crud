@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ResetPasswordController;
 
 Route::group([
@@ -28,9 +29,9 @@ Route::group([
 
     Route::prefix('users')->group(function () {
         Route::get('get_users', [UserController::class, 'getUsers'])->middleware([JWT::class]);
-        Route::post('/register_user', [UserController::class, 'register_user'])->middleware([JWT::class])->name('register_user');
-        Route::put('/update_user/{id}', [UserController::class, 'update'])->middleware([JWT::class])->name('update_user');
-        Route::delete('/delete_user/{id}', [UserController::class, 'delete'])->middleware([JWT::class])->name('delete_user');
+        Route::post('/register_user', [UserController::class, 'registerUser'])->middleware([JWT::class])->name('register_user');
+        Route::put('/update_user/{id}', [UserController::class, 'updateUser'])->middleware([JWT::class])->name('update_user');
+        Route::delete('/delete_user/{id}', [UserController::class, 'deleteUser'])->middleware([JWT::class])->name('delete_user');
         Route::get('desactivate_user/{id}', [UserController::class, 'desactivateUser'])->middleware([JWT::class]);
         Route::get('activate_user/{id}', [UserController::class, 'activateUser'])->middleware([JWT::class]);
         Route::get('count_users', [UserController::class, 'countUsers'])->middleware([JWT::class]);
@@ -54,9 +55,19 @@ Route::group([
 
     Route::group(['prefix' => 'blogs'], function () {
         Route::get('get_blogs', [BlogController::class, 'getBlogs'])->middleware([JWT::class]);
+        Route::get('get_blog/{id}', [BlogController::class, 'getBlogId'])->middleware([JWT::class]);
+
         Route::post('create_blog', [BlogController::class, 'createBlog'])->middleware([JWT::class]);
         Route::put('update_blog/{id}', [BlogController::class, 'updateBlog'])->middleware([JWT::class]);
         Route::delete('delete_blog/{id}', [BlogController::class, 'deleteBlog'])->middleware([JWT::class]);
         Route::get('count_blogs', [BlogController::class, 'countBlogs'])->middleware([JWT::class]);
+    });
+
+    Route::group(['prefix' => 'categories'], function () {
+        Route::get('get_categories', [CategoryController::class, 'getCategories'])->middleware([JWT::class]);
+        Route::post('create_category', [CategoryController::class, 'createCategory'])->middleware([JWT::class]);
+        Route::put('update_category/{id}', [CategoryController::class, 'updateCategory'])->middleware([JWT::class]);
+        Route::delete('delete_category/{id}', [CategoryController::class, 'deleteCategory'])->middleware([JWT::class]);
+        Route::get('count_categories', [CategoryController::class, 'countCategories'])->middleware([JWT::class]);
     });
 });
